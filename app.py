@@ -74,22 +74,6 @@ def build_map(venues, user=None, route=None):
     return m._repr_html_()
 
 
-def table_rows(ranked, best):
-    rows = []
-    for idx, v in ranked.iterrows():
-        route_m = v.get("Jarak_Rute_m")
-        rows.append({
-            "nama": v["Nama"],
-            "olahraga": config.SPORTS.get(v["Jenis_Olahraga"], {}).get("label", v["Jenis_Olahraga"]),
-            "garis_lurus": f"{v['Jarak_m'] / 1000:.2f}".replace(".", ","),
-            "rute": f"{route_m / 1000:.2f}".replace(".", ",") if route_m is not None else "-",
-            "waktu": f"±{best['minutes']:.0f} menit" if best and idx == best["index"] else "-",
-            "status": v["Status_Buka"],
-            "hasil": "Terdekat, rute ditampilkan" if best and idx == best["index"] else "Ditampilkan",
-        })
-    return rows
-
-
 @app.route("/")
 def index():
     action = request.args.get("action", "")
@@ -109,12 +93,12 @@ def index():
         # First load: every venue, no filter, no route.
         venues = gis.filter_open_now(venues, enabled=False)
         return render_template("index.html", sports=config.SPORTS, sport=sport, address=address,
-                               open_now=open_only, map_html=build_map(venues), rows=[],
+                               open_now=open_only, map_html=build_map(venues),
                                warnings=warnings, summary=None)
 
     venues = gis.filter_by_sport(venues, sport)
     venues = gis.filter_open_now(venues, enabled=open_only)
-    user, best, rows, summary = None, None, [], None
+    user, best, summary = None, None, None
 
     if action == "route":
         lat, lon, name = resolve_origin(address or config.FALLBACK_ORIGIN["name"], warnings)
@@ -132,11 +116,10 @@ def index():
                 km = f"{best['length_m'] / 1000:.2f}".replace(".", ",")
                 summary = (f"Terdekat lewat jalan: {target['Nama']}, {km} km, "
                            f"±{best['minutes']:.0f} menit (asumsi {config.AVG_SPEED_KMH} km/jam).")
-            rows = table_rows(ranked, best)
         venues = ranked if not ranked.empty else venues
 
     return render_template("index.html", sports=config.SPORTS, sport=sport, address=address,
-                           open_now=open_only, map_html=build_map(venues, user, best), rows=rows,
+                           open_now=open_only, map_html=build_map(venues, user, best),
                            warnings=warnings, summary=summary)
 
 

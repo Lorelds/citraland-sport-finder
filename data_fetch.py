@@ -56,10 +56,22 @@ def search_places(sport_key: str, api_key: str) -> list[dict]:
     return rows
 
 
+def names_other_sport(name: str, sport_key: str) -> bool:
+    """True when the name clearly belongs to another sport and not this one.
+
+    Text Search is loose: "lapangan futsal" also returns tennis courts.
+    Names that mention no sport at all (e.g. "Citraland Square Park") are kept.
+    """
+    lowered = name.lower()
+    if any(w in lowered for w in config.SPORTS[sport_key]["words"]):
+        return False
+    return any(w in lowered for k, s in config.SPORTS.items() if k != sport_key for w in s["words"])
+
+
 def fetch_all_venues(api_key: str) -> gpd.GeoDataFrame:
     rows = []
     for sport_key in config.SPORTS:
-        found = search_places(sport_key, api_key)
+        found = [r for r in search_places(sport_key, api_key) if not names_other_sport(r["Nama"], sport_key)]
         print(f"  {sport_key}: {len(found)} tempat")
         rows.extend(found)
     gdf = gpd.GeoDataFrame(rows, geometry="geometry", crs=config.CRS_WGS84)
@@ -68,15 +80,31 @@ def fetch_all_venues(api_key: str) -> gpd.GeoDataFrame:
 
 
 def geocode(address: str, api_key: str) -> tuple[float, float] | None:
-    """Return (lat, lon) for an address, or None when Google finds nothing."""
+    """Return (lat, lon) for an address, or None when Google finds nothing.
+
+    Tries the Geocoding API first. If that API is not enabled on the key
+    (REQUEST_DENIED), falls back to Places Text Search, which also resolves
+    addresses and place names such as "Universitas Ciputra".
+    """
     params = {"address": address, "key": api_key, "region": "id", "language": "id"}
     resp = requests.get(GEOCODE_URL, params=params, timeout=TIMEOUT_S)
     resp.raise_for_status()
-    results = resp.json().get("results", [])
-    if not results:
+    data = resp.json()
+    if data.get("results"):
+        loc = data["results"][0]["geometry"]["location"]
+        return loc["lat"], loc["lng"]
+    if data.get("status") != "REQUEST_DENIED":
         return None
-    loc = results[0]["geometry"]["location"]
-    return loc["lat"], loc["lng"]
+
+    headers = {"X-Goog-Api-Key": api_key, "X-Goog-FieldMask": "places.location"}
+    body = {"textQuery": f"{address}, Surabaya", "languageCode": "id"}
+    resp = requests.post(PLACES_URL, json=body, headers=headers, timeout=TIMEOUT_S)
+    resp.raise_for_status()
+    places = resp.json().get("places", [])
+    if not places:
+        return None
+    loc = places[0]["location"]
+    return loc["latitude"], loc["longitude"]
 
 
 def main() -> int:

@@ -33,14 +33,15 @@ ROUTE_CANDIDATES = 3
 FALLBACK_ORIGIN = {"name": "Universitas Ciputra, Surabaya", "lat": -7.2861, "lon": 112.6319}
 MAP_CENTER = (-7.2875, 112.6420)
 
-# key: dropdown value, label: Indonesian label, query: Places search text, color: marker color
+# key: dropdown value, label: Indonesian label, query: Places search text, color: marker color,
+# words: name words that identify the sport (used to drop results Google files under the wrong sport)
 SPORTS = {
-    "badminton": {"label": "Badminton", "query": "lapangan badminton", "color": "#e6194b"},
-    "futsal": {"label": "Futsal", "query": "lapangan futsal", "color": "#3cb44b"},
-    "basket": {"label": "Basket", "query": "lapangan basket", "color": "#f58231"},
-    "tenis": {"label": "Tenis", "query": "lapangan tenis", "color": "#911eb4"},
-    "gym": {"label": "Gym", "query": "gym fitness", "color": "#4363d8"},
-    "renang": {"label": "Renang", "query": "kolam renang", "color": "#42d4f4"},
+    "badminton": {"label": "Badminton", "query": "lapangan badminton", "color": "#e6194b", "words": ["badminton", "bulu tangkis", "smash"]},
+    "futsal": {"label": "Futsal", "query": "lapangan futsal", "color": "#3cb44b", "words": ["futsal", "soccer", "sepak bola", "mini soccer"]},
+    "basket": {"label": "Basket", "query": "lapangan basket", "color": "#f58231", "words": ["basket"]},
+    "tenis": {"label": "Tenis", "query": "lapangan tenis", "color": "#911eb4", "words": ["tenis", "tennis"]},
+    "gym": {"label": "Gym", "query": "gym fitness", "color": "#4363d8", "words": ["gym", "fitness", "training", "bodywork", "martial"]},
+    "renang": {"label": "Renang", "query": "kolam renang", "color": "#42d4f4", "words": ["renang", "swim", "kolam", "waterpark"]},
 }
 ROUTE_COLOR = "#111111"
 TIMEZONE = "Asia/Jakarta"

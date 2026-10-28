@@ -34,26 +34,6 @@
     {% if summary %}<p class="summary">{{ summary }}</p>{% endif %}
 
     <div class="map">{{ map_html | safe }}</div>
-
-    {% if rows %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Tempat</th><th>Olahraga</th><th>Jarak Garis Lurus (km)</th><th>Jarak Rute (km)</th>
-              <th>Estimasi Waktu</th><th>Status Buka</th><th>Hasil</th></tr>
-        </thead>
-        <tbody>
-          {% for r in rows %}
-          <tr class="{{ 'best' if r.hasil.startswith('Terdekat') }}">
-            <td>{{ r.nama }}</td><td>{{ r.olahraga }}</td><td>{{ r.garis_lurus }}</td><td>{{ r.rute }}</td>
-            <td>{{ r.waktu }}</td><td>{{ r.status }}</td><td>{{ r.hasil }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <p class="note">Jarak rute dihitung untuk {{ rows|length if rows|length < 3 else 3 }} tempat terdekat (garis lurus); yang terpendek lewat jalan dipilih.</p>
-    </div>
-    {% endif %}
   </main>
 
   <script>

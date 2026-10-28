@@ -73,3 +73,11 @@ def test_open_now_on_sample_file(venues):
     result = gis.filter_open_now(venues, enabled=True, now=datetime(2026, 10, 28, 23, 30))
     assert "Status_Buka" in result.columns
     assert "Contoh Lapangan Basket" in set(result["Nama"])  # unknown hours are kept
+
+
+def test_names_other_sport():
+    import data_fetch
+
+    assert data_fetch.names_other_sport("Tennis Court TPR Citraland", "futsal") is True
+    assert data_fetch.names_other_sport("Kolam Renang dan Arena Tenis G-Walk", "tenis") is False
+    assert data_fetch.names_other_sport("Citraland Square Park", "futsal") is False
