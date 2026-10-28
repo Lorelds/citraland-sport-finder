@@ -4,43 +4,79 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Citraland Sport Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header>
-    <h1>Citraland Sport Finder</h1>
+  <div class="map">{{ map_html | safe }}</div>
+
+  <aside class="panel" id="panel">
+    <div class="card">
+    <div class="panel-head">
+      <div>
+        <h1>Citraland Sport Finder</h1>
+        <p class="subtitle">Tempat olahraga terdekat di CitraLand Surabaya</p>
+      </div>
+      <button type="button" class="toggle" id="toggle" aria-expanded="true" aria-controls="search" aria-label="Tampilkan atau sembunyikan filter">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+
     <form method="get" id="search">
       <input type="hidden" name="action" id="action" value="filter">
-      <label>Jenis Olahraga
-        <select name="sport" id="sport">
-          <option value="semua" {% if sport == 'semua' %}selected{% endif %}>Semua</option>
-          {% for key, s in sports.items() %}
-          <option value="{{ key }}" {% if sport == key %}selected{% endif %}>{{ s.label }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>Alamat Awal
-        <input type="text" name="address" value="{{ address }}" placeholder="Universitas Ciputra, Surabaya">
-      </label>
-      <label class="check">
-        <input type="checkbox" name="open_now" {% if open_now %}checked{% endif %}> Hanya yang buka sekarang
-      </label>
-      <button type="submit" onclick="document.getElementById('action').value='route'">Tampilkan Rute</button>
+      <div class="fields">
+        <label class="field">
+          <span>Jenis Olahraga</span>
+          <select name="sport" id="sport">
+            <option value="semua" {% if sport == 'semua' %}selected{% endif %}>Semua</option>
+            {% for key, s in sports.items() %}
+            <option value="{{ key }}" {% if sport == key %}selected{% endif %}>{{ s.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>Alamat Awal</span>
+          <input type="text" name="address" value="{{ address }}" placeholder="Universitas Ciputra, Surabaya">
+        </label>
+        <label class="check">
+          <input type="checkbox" name="open_now" {% if open_now %}checked{% endif %}>
+          <span>Hanya yang buka sekarang</span>
+        </label>
+        {% for w in warnings %}<p class="note">{{ w }}</p>{% endfor %}
+      </div>
+      <button type="submit" class="primary" onclick="document.getElementById('action').value='route'">Tampilkan Rute</button>
     </form>
-  </header>
+    </div>
 
-  <main>
-    {% for w in warnings %}<p class="warning">{{ w }}</p>{% endfor %}
-    {% if summary %}<p class="summary">{{ summary }}</p>{% endif %}
-
-    <div class="map">{{ map_html | safe }}</div>
-  </main>
+    {% if result %}
+    <section class="result" aria-live="polite">
+      <p class="result-label">Terdekat lewat jalan</p>
+      <p class="result-name">{{ result.name }}</p>
+      <div class="result-meta">
+        <span class="pill" style="--pill: {{ result.color }}">{{ result.sport }}</span>
+        <span class="distance">{{ result.distance }}</span>
+      </div>
+    </section>
+    {% elif notice %}
+    <section class="result empty"><p>{{ notice }}</p></section>
+    {% endif %}
+  </aside>
 
   <script>
     // Changing the sport filters the markers right away, without computing a route.
     document.getElementById('sport').addEventListener('change', function () {
       document.getElementById('action').value = 'filter';
       document.getElementById('search').submit();
+    });
+
+    // Mobile: collapse the sheet down to the title and the button.
+    var panel = document.getElementById('panel');
+    var toggle = document.getElementById('toggle');
+    toggle.addEventListener('click', function () {
+      var collapsed = panel.classList.toggle('collapsed');
+      toggle.setAttribute('aria-expanded', String(!collapsed));
     });
   </script>
 </body>

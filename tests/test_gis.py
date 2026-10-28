@@ -81,3 +81,36 @@ def test_names_other_sport():
     assert data_fetch.names_other_sport("Tennis Court TPR Citraland", "futsal") is True
     assert data_fetch.names_other_sport("Kolam Renang dan Arena Tenis G-Walk", "tenis") is False
     assert data_fetch.names_other_sport("Citraland Square Park", "futsal") is False
+
+
+# Private Fitness is labelled "Ngagel" but its coordinate is inside OSM's own
+# "Citraland Utara" polygon, so it counts as CitraLand.
+INSIDE = {
+    "KYZN / Ciputra Arena (Northwest)": (-7.2519, 112.6159),
+    "Clubhouse Citraland Utara": (-7.2601, 112.6339),
+    "Ola Fit Club The GreenLake": (-7.3096, 112.6564),
+    "Nisrina Futsal Center": (-7.2783, 112.6320),
+    "Private Fitness": (-7.2550, 112.6246),
+}
+OUTSIDE = {
+    "GOR UNESA": (-7.2988, 112.6687),
+    "55th Graha Sport Center": (-7.2925, 112.6771),
+    "MAXICOURT Royal Surabaya": (-7.3181, 112.6776),
+}
+
+
+@pytest.mark.parametrize("name,latlon", list(INSIDE.items()))
+def test_area_contains_citraland_venues(name, latlon):
+    area = gpd.read_file(config.BOUNDARY_AREA).geometry.iloc[0]
+    assert area.intersects(Point(latlon[1], latlon[0])), name
+
+
+@pytest.mark.parametrize("name,latlon", list(OUTSIDE.items()))
+def test_area_excludes_other_venues(name, latlon):
+    area = gpd.read_file(config.BOUNDARY_AREA).geometry.iloc[0]
+    assert not area.intersects(Point(latlon[1], latlon[0])), name
+
+
+def test_area_is_single_polygon_without_holes():
+    area = gpd.read_file(config.BOUNDARY_AREA).geometry.iloc[0]
+    assert area.geom_type == "Polygon" and len(area.interiors) == 0

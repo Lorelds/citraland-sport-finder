@@ -22,6 +22,8 @@ _graph_cache = None
 
 def load_boundary() -> tuple[gpd.GeoDataFrame, str]:
     """Layer 2: CitraLand polygon. Returns (gdf in UTM, source label)."""
+    if config.BOUNDARY_AREA.exists():
+        return gpd.read_file(config.BOUNDARY_AREA).to_crs(config.CRS_UTM), "OSM + manual"
     if config.BOUNDARY_CACHE.exists():
         return gpd.read_file(config.BOUNDARY_CACHE).to_crs(config.CRS_UTM), "OSM (cache)"
     try:
@@ -153,6 +155,5 @@ def route_to_nearest(ranked: gpd.GeoDataFrame, user_point: gpd.GeoSeries, graph)
             best = {**result, "index": idx}
     if best is None:
         return ranked, None
-    best["minutes"] = best["length_m"] / 1000 / config.AVG_SPEED_KMH * 60
     best["line_wgs84"] = gpd.GeoSeries([best["line"]], crs=config.CRS_UTM).to_crs(config.CRS_WGS84).iloc[0]
     return ranked, best

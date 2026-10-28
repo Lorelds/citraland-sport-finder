@@ -17,21 +17,33 @@ CRS_UTM = "EPSG:32749"  # WGS 84 / UTM zone 49S, covers Surabaya
 
 VENUES_CACHE = DATA_DIR / "venues.geojson"
 VENUES_SAMPLE = DATA_DIR / "venues_sample.geojson"
-BOUNDARY_CACHE = DATA_DIR / "citraland_osm.geojson"
+BOUNDARY_AREA = DATA_DIR / "citraland_area.geojson"  # full township, built by data_fetch.py --boundary
+BOUNDARY_CACHE = DATA_DIR / "citraland_osm.geojson"  # OSM "Citraland, RW 07, Made" only
 BOUNDARY_MANUAL = DATA_DIR / "citraland_manual.geojson"
 GRAPH_CACHE = DATA_DIR / "graph.graphml"
 
 BOUNDARY_QUERY = "CitraLand, Surabaya"
+BOUNDARY_QUERY_UTARA = "Citraland Utara, Surabaya"
+
+# Hand-drawn (lon, lat) outline for the parts of CitraLand that OSM has no
+# polygon for: CitraLand Northwest, the gap between Utara and the main estate,
+# and The GreenLake in the south. Traced from known venues, so it is approximate.
+HAND_DRAWN_AREA = [
+    (112.6120, -7.2455), (112.6330, -7.2465), (112.6420, -7.2580), (112.6420, -7.2700),
+    (112.6520, -7.2715), (112.6600, -7.2790), (112.6630, -7.2950), (112.6630, -7.3040),
+    (112.6600, -7.3130), (112.6480, -7.3140), (112.6380, -7.3065), (112.6260, -7.3020),
+    (112.6200, -7.2900), (112.6175, -7.2780), (112.6120, -7.2650),
+]
 # The road graph extends past the boundary so users starting from outside
 # (a kos in Lontar or Sambikerep) can still be routed in.
 GRAPH_BUFFER_M = 2500
 
-AVG_SPEED_KMH = 30
 ROUTE_CANDIDATES = 3
+PLACES_BIAS_RADIUS_M = 6000.0
 
 # Universitas Ciputra, used when geocoding is unavailable.
 FALLBACK_ORIGIN = {"name": "Universitas Ciputra, Surabaya", "lat": -7.2861, "lon": 112.6319}
-MAP_CENTER = (-7.2875, 112.6420)
+MAP_CENTER = (-7.2804, 112.6369)  # centroid of citraland_area.geojson
 
 # key: dropdown value, label: Indonesian label, query: Places search text, color: marker color,
 # words: name words that identify the sport (used to drop results Google files under the wrong sport)
@@ -43,5 +55,5 @@ SPORTS = {
     "gym": {"label": "Gym", "query": "gym fitness", "color": "#4363d8", "words": ["gym", "fitness", "training", "bodywork", "martial"]},
     "renang": {"label": "Renang", "query": "kolam renang", "color": "#42d4f4", "words": ["renang", "swim", "kolam", "waterpark"]},
 }
-ROUTE_COLOR = "#111111"
+ACCENT_COLOR = "#0f172a"  # button and route line; dark so it reads against every sport color
 TIMEZONE = "Asia/Jakarta"
