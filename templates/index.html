@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Citraland Sport Finder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Citraland Sport Finder</h1>
+    <form method="get" id="search">
+      <input type="hidden" name="action" id="action" value="filter">
+      <label>Jenis Olahraga
+        <select name="sport" id="sport">
+          <option value="semua" {% if sport == 'semua' %}selected{% endif %}>Semua</option>
+          {% for key, s in sports.items() %}
+          <option value="{{ key }}" {% if sport == key %}selected{% endif %}>{{ s.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Alamat Awal
+        <input type="text" name="address" value="{{ address }}" placeholder="Universitas Ciputra, Surabaya">
+      </label>
+      <label class="check">
+        <input type="checkbox" name="open_now" {% if open_now %}checked{% endif %}> Hanya yang buka sekarang
+      </label>
+      <button type="submit" onclick="document.getElementById('action').value='route'">Tampilkan Rute</button>
+    </form>
+  </header>
+
+  <main>
+    {% for w in warnings %}<p class="warning">{{ w }}</p>{% endfor %}
+    {% if summary %}<p class="summary">{{ summary }}</p>{% endif %}
+
+    <div class="map">{{ map_html | safe }}</div>
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tempat</th><th>Olahraga</th><th>Jarak Garis Lurus (km)</th><th>Jarak Rute (km)</th>
+              <th>Estimasi Waktu</th><th>Status Buka</th><th>Hasil</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr class="{{ 'best' if r.hasil.startswith('Terdekat') }}">
+            <td>{{ r.nama }}</td><td>{{ r.olahraga }}</td><td>{{ r.garis_lurus }}</td><td>{{ r.rute }}</td>
+            <td>{{ r.waktu }}</td><td>{{ r.status }}</td><td>{{ r.hasil }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="note">Jarak rute dihitung untuk {{ rows|length if rows|length < 3 else 3 }} tempat terdekat (garis lurus); yang terpendek lewat jalan dipilih.</p>
+    </div>
+    {% endif %}
+  </main>
+
+  <script>
+    // Changing the sport filters the markers right away, without computing a route.
+    document.getElementById('sport').addEventListener('change', function () {
+      document.getElementById('action').value = 'filter';
+      document.getElementById('search').submit();
+    });
+  </script>
+</body>
+</html>
