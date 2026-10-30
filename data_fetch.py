@@ -63,9 +63,16 @@ def names_other_sport(name: str, sport_key: str) -> bool:
     Names that mention no sport at all (e.g. "Citraland Square Park") are kept.
     """
     lowered = name.lower()
-    if any(w in lowered for w in config.SPORTS[sport_key]["words"]):
+    if names_sport(lowered, sport_key):
         return False
-    return any(w in lowered for k, s in config.SPORTS.items() if k != sport_key for w in s["words"])
+    return any(names_sport(lowered, k) for k in config.SPORTS if k != sport_key)
+
+
+def names_sport(lowered: str, sport_key: str) -> bool:
+    sport = config.SPORTS[sport_key]
+    if any(w in lowered for w in sport.get("not_words", [])):
+        return False
+    return any(w in lowered for w in sport["words"])
 
 
 def fetch_all_venues(api_key: str) -> gpd.GeoDataFrame:

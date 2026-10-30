@@ -26,9 +26,8 @@ Google Cloud APIs needed: **Places API (New)** and **Geocoding API**.
 | Layer 2 | `load_boundary` | CitraLand polygon: OSM pieces via `osmnx.geocode_to_gdf` + hand-drawn parts (see Data notes) |
 | 1 | `spatial_join` | `sjoin(..., predicate="intersects")`: keep venues inside CitraLand |
 | 2 | `filter_by_sport` | Dropdown filter on `Jenis_Olahraga` |
-| 3 | `filter_open_now` | Places opening hours; unknown hours are kept and labelled |
-| 4 | `rank_by_distance` | Straight-line distance in meters (EPSG:32749) |
-| 5 | `route_to_nearest` | OSMnx `shortest_path` with nearest-node snapping, road distance in km |
+| 3 | `rank_by_distance` | Straight-line distance in meters (EPSG:32749) |
+| 4 | `route_to_nearest` | OSMnx `shortest_path` with nearest-node snapping, road distance in km |
 
 All distances use EPSG:32749 (WGS 84 / UTM 49S). Data goes back to EPSG:4326 only for the Folium map.
 
@@ -46,3 +45,7 @@ All distances use EPSG:32749 (WGS 84 / UTM 49S). Data goes back to EPSG:4326 onl
 ```
 .venv\Scripts\python -m pytest
 ```
+
+## Study guide
+
+`docs/Panduan-Belajar-Citraland-Sport-Finder.pdf` (Bahasa Indonesia) explains the concepts, data flow, every file, and has practice questions.

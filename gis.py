@@ -4,10 +4,6 @@ All distance work happens in EPSG:32749 (meters). Results are converted
 back to EPSG:4326 only when they are drawn on the Folium map.
 """
 
-import json
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 import geopandas as gpd
 import osmnx as ox
 from shapely.geometry import LineString, Point
@@ -64,38 +60,6 @@ def filter_by_sport(venues: gpd.GeoDataFrame, sport: str) -> gpd.GeoDataFrame:
     if not sport or sport == "semua":
         return venues
     return venues[venues["Jenis_Olahraga"] == sport]
-
-
-def is_open(opening_hours: str | list | None, now: datetime) -> bool | None:
-    """True/False from Places regularOpeningHours periods, None if unknown."""
-    # Missing values come back as None or NaN depending on the reader.
-    if not isinstance(opening_hours, (str, list)) or len(opening_hours) == 0:
-        return None
-    # Written as a JSON string, but the GeoJSON reader may hand it back already parsed.
-    periods = json.loads(opening_hours) if isinstance(opening_hours, str) else opening_hours
-    # Places counts days from Sunday = 0; Python counts from Monday = 0.
-    week_min = ((now.weekday() + 1) % 7) * 1440 + now.hour * 60 + now.minute
-    for p in periods:
-        if "close" not in p:  # a single open period with no close means 24/7
-            return True
-        o = p["open"]["day"] * 1440 + p["open"]["hour"] * 60 + p["open"]["minute"]
-        c = p["close"]["day"] * 1440 + p["close"]["hour"] * 60 + p["close"]["minute"]
-        if o <= c and o <= week_min < c:
-            return True
-        if o > c and (week_min >= o or week_min < c):  # wraps past Saturday night
-            return True
-    return False
-
-
-def filter_open_now(venues: gpd.GeoDataFrame, enabled: bool, now: datetime | None = None) -> gpd.GeoDataFrame:
-    """Drop venues known to be closed. Unknown hours are kept and labelled."""
-    now = now or datetime.now(ZoneInfo(config.TIMEZONE))
-    venues = venues.copy()
-    status = venues["opening_hours"].apply(lambda h: is_open(h, now))
-    venues["Status_Buka"] = status.map({True: "Buka", False: "Tutup"}).fillna("Jam tidak diketahui")
-    if enabled:
-        venues = venues[status != False]  # noqa: E712 - keep None (unknown)
-    return venues
 
 
 def rank_by_distance(venues: gpd.GeoDataFrame, user_point: gpd.GeoSeries) -> gpd.GeoDataFrame:

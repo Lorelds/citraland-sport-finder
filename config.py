@@ -47,13 +47,16 @@ MAP_CENTER = (-7.2804, 112.6369)  # centroid of citraland_area.geojson
 
 # key: dropdown value, label: Indonesian label, query: Places search text, color: marker color,
 # words: name words that identify the sport (used to drop results Google files under the wrong sport)
+# not_words: name words that rule the sport out even when a word matches (tenis vs tenis meja)
 SPORTS = {
     "badminton": {"label": "Badminton", "query": "lapangan badminton", "color": "#e6194b", "words": ["badminton", "bulu tangkis", "smash"]},
     "futsal": {"label": "Futsal", "query": "lapangan futsal", "color": "#3cb44b", "words": ["futsal", "soccer", "sepak bola", "mini soccer"]},
     "basket": {"label": "Basket", "query": "lapangan basket", "color": "#f58231", "words": ["basket"]},
-    "tenis": {"label": "Tenis", "query": "lapangan tenis", "color": "#911eb4", "words": ["tenis", "tennis"]},
+    "tenis": {"label": "Tenis", "query": "lapangan tenis", "color": "#911eb4", "words": ["tenis", "tennis"],
+              "not_words": ["tenis meja", "table tennis"]},
+    "tenis_meja": {"label": "Tenis Meja", "query": "tenis meja", "color": "#9a6324", "words": ["tenis meja", "table tennis", "pingpong", "ping pong", "ptm"]},
+    "padel": {"label": "Padel", "query": "lapangan padel", "color": "#469990", "words": ["padel"]},
     "gym": {"label": "Gym", "query": "gym fitness", "color": "#4363d8", "words": ["gym", "fitness", "training", "bodywork", "martial"]},
     "renang": {"label": "Renang", "query": "kolam renang", "color": "#42d4f4", "words": ["renang", "swim", "kolam", "waterpark"]},
 }
 ACCENT_COLOR = "#0f172a"  # button and route line; dark so it reads against every sport color
-TIMEZONE = "Asia/Jakarta"

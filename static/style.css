@@ -105,9 +105,6 @@ select:focus, input[type="text"]:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
-.check { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
-.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
-.check input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .note {
   margin: 0;

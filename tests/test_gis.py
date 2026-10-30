@@ -1,6 +1,4 @@
-import json
 import sys
-from datetime import datetime
 from pathlib import Path
 
 import geopandas as gpd
@@ -60,27 +58,16 @@ def test_distances_use_utm(venues):
         gis.rank_by_distance(venues.to_crs(config.CRS_WGS84), user)
 
 
-def test_open_now():
-    hours = json.dumps([{"open": {"day": d, "hour": 7, "minute": 0}, "close": {"day": d, "hour": 22, "minute": 0}} for d in range(7)])
-    assert gis.is_open(hours, datetime(2026, 10, 28, 10, 0)) is True
-    assert gis.is_open(hours, datetime(2026, 10, 28, 23, 0)) is False
-    assert gis.is_open(None, datetime(2026, 10, 28, 10, 0)) is None
-    assert gis.is_open(json.dumps([{"open": {"day": 0, "hour": 0, "minute": 0}}]), datetime(2026, 10, 28, 3, 0)) is True
-
-
-def test_open_now_on_sample_file(venues):
-    # The GeoJSON reader returns opening_hours as parsed lists; this must not crash.
-    result = gis.filter_open_now(venues, enabled=True, now=datetime(2026, 10, 28, 23, 30))
-    assert "Status_Buka" in result.columns
-    assert "Contoh Lapangan Basket" in set(result["Nama"])  # unknown hours are kept
-
-
 def test_names_other_sport():
     import data_fetch
 
     assert data_fetch.names_other_sport("Tennis Court TPR Citraland", "futsal") is True
     assert data_fetch.names_other_sport("Kolam Renang dan Arena Tenis G-Walk", "tenis") is False
     assert data_fetch.names_other_sport("Citraland Square Park", "futsal") is False
+    # Tenis and tenis meja are separate sports.
+    assert data_fetch.names_other_sport("Tenis Meja Citraland", "tenis") is True
+    assert data_fetch.names_other_sport("Tenis Meja Citraland", "tenis_meja") is False
+    assert data_fetch.names_other_sport("Padel Club Surabaya", "tenis") is True
 
 
 # Private Fitness is labelled "Ngagel" but its coordinate is inside OSM's own

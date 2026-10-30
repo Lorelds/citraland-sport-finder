@@ -116,8 +116,6 @@ def index():
     action = request.args.get("action", "")
     sport = request.args.get("sport", "semua")
     address = request.args.get("address", "").strip()
-    # Checkbox defaults to on for the first page load.
-    open_only = request.args.get("open_now") == "on" if action else True
 
     warnings: list[str] = []
     if VENUES_SOURCE == "data contoh":
@@ -125,7 +123,7 @@ def index():
     if BOUNDARY_SOURCE.startswith("manual"):
         warnings.append("Batas CitraLand memakai polygon manual (perkiraan).")
 
-    page = {"sports": config.SPORTS, "sport": sport, "address": address, "open_now": open_only,
+    page = {"sports": config.SPORTS, "sport": sport, "address": address,
             "warnings": warnings, "result": None, "notice": None}
 
     venues = gis.spatial_join(VENUES_ALL, BOUNDARY)
@@ -134,7 +132,6 @@ def index():
         return render_template("index.html", map_html=build_map(venues), **page)
 
     venues = gis.filter_by_sport(venues, sport)
-    venues = gis.filter_open_now(venues, enabled=open_only)
     user, best = None, None
 
     if action == "route":

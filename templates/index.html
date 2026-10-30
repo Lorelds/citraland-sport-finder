@@ -40,10 +40,6 @@
           <span>Alamat Awal</span>
           <input type="text" name="address" value="{{ address }}" placeholder="Universitas Ciputra, Surabaya">
         </label>
-        <label class="check">
-          <input type="checkbox" name="open_now" {% if open_now %}checked{% endif %}>
-          <span>Hanya yang buka sekarang</span>
-        </label>
         {% for w in warnings %}<p class="note">{{ w }}</p>{% endfor %}
       </div>
       <button type="submit" class="primary" onclick="document.getElementById('action').value='route'">Tampilkan Rute</button>
