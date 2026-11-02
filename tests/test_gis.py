@@ -35,6 +35,33 @@ def test_spatial_join_drops_point_outside(boundary, venues):
     assert len(joined) == len(venues)
 
 
+def test_distance_to_boundary_limit():
+    boundary = gpd.read_file(config.BOUNDARY_AREA).to_crs(config.CRS_UTM)
+    inside = gis.point_from_latlon(**{k: config.FALLBACK_ORIGIN[k] for k in ("lat", "lon")})
+    assert gis.distance_to_boundary(inside, boundary) == 0
+    # GOR UNESA is just outside the edge: within the limit.
+    near = gis.point_from_latlon(-7.2988, 112.6687)
+    assert 0 < gis.distance_to_boundary(near, boundary) <= config.MAX_ORIGIN_DISTANCE_M
+    # Tunjungan Plaza, central Surabaya: far beyond 2.5 km.
+    far = gis.point_from_latlon(-7.2625, 112.7390)
+    assert gis.distance_to_boundary(far, boundary) > config.MAX_ORIGIN_DISTANCE_M
+
+
+@pytest.mark.parametrize("found,expected", [
+    ((3.1390, 101.6869), "berjarak"),  # Kuala Lumpur
+    (None, "tidak ditemukan"),
+])
+def test_route_refuses_bad_origin(monkeypatch, found, expected):
+    import app
+    import data_fetch
+
+    monkeypatch.setattr(config, "GOOGLE_MAPS_API_KEY", "test")
+    monkeypatch.setattr(data_fetch, "geocode", lambda address, key: found)
+    html = app.app.test_client().get("/?action=route&address=Test").get_data(as_text=True)
+    assert expected in html
+    assert "Terdekat lewat jalan" not in html
+
+
 def test_filter_by_sport(venues):
     result = gis.filter_by_sport(venues, "badminton")
     assert len(result) == 2
@@ -101,3 +128,16 @@ def test_area_excludes_other_venues(name, latlon):
 def test_area_is_single_polygon_without_holes():
     area = gpd.read_file(config.BOUNDARY_AREA).geometry.iloc[0]
     assert area.geom_type == "Polygon" and len(area.interiors) == 0
+
+
+def test_geocode_falls_back_when_google_fails(monkeypatch):
+    import requests
+    import data_fetch
+
+    def google_down(address, key):
+        raise requests.HTTPError("429")
+
+    monkeypatch.setattr(data_fetch, "geocode_google", google_down)
+    monkeypatch.setattr(data_fetch, "geocode_nominatim", lambda address: (-7.25, 112.63))
+    assert data_fetch.geocode("Bukit Palma", "key") == (-7.25, 112.63)
+    assert data_fetch.geocode("Citraland Northwest, Surabaya", "key") == config.KNOWN_PLACES["northwest"]

@@ -34,12 +34,19 @@ HAND_DRAWN_AREA = [
     (112.6600, -7.3130), (112.6480, -7.3140), (112.6380, -7.3065), (112.6260, -7.3020),
     (112.6200, -7.2900), (112.6175, -7.2780), (112.6120, -7.2650),
 ]
+# Farthest a starting address may be from the CitraLand boundary (straight line).
+# Anything farther is rejected, so the app only serves CitraLand and its surroundings.
+MAX_ORIGIN_DISTANCE_M = 2500
 # The road graph extends past the boundary so users starting from outside
-# (a kos in Lontar or Sambikerep) can still be routed in.
-GRAPH_BUFFER_M = 2500
+# (a kos in Lontar or Sambikerep) can still be routed in. It covers exactly the
+# allowed origin distance, so every accepted address has roads around it.
+GRAPH_BUFFER_M = MAX_ORIGIN_DISTANCE_M
 
 ROUTE_CANDIDATES = 3
 PLACES_BIAS_RADIUS_M = 6000.0
+
+# Areas OpenStreetMap has no name for, used when Google is unavailable: (lat, lon).
+KNOWN_PLACES = {"northwest": (-7.2503184, 112.6187887)}  # NORTHWEST CENTRAL in venues.geojson
 
 # Universitas Ciputra, used when geocoding is unavailable.
 FALLBACK_ORIGIN = {"name": "Universitas Ciputra, Surabaya", "lat": -7.2861, "lon": 112.6319}
@@ -53,7 +60,7 @@ SPORTS = {
     "futsal": {"label": "Futsal", "query": "lapangan futsal", "color": "#3cb44b", "words": ["futsal", "soccer", "sepak bola", "mini soccer"]},
     "basket": {"label": "Basket", "query": "lapangan basket", "color": "#f58231", "words": ["basket"]},
     "tenis": {"label": "Tenis", "query": "lapangan tenis", "color": "#911eb4", "words": ["tenis", "tennis"],
-              "not_words": ["tenis meja", "table tennis"]},
+            "not_words": ["tenis meja", "table tennis"]},
     "tenis_meja": {"label": "Tenis Meja", "query": "tenis meja", "color": "#9a6324", "words": ["tenis meja", "table tennis", "pingpong", "ping pong", "ptm"]},
     "padel": {"label": "Padel", "query": "lapangan padel", "color": "#469990", "words": ["padel"]},
     "gym": {"label": "Gym", "query": "gym fitness", "color": "#4363d8", "words": ["gym", "fitness", "training", "bodywork", "martial"]},

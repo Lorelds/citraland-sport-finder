@@ -18,7 +18,7 @@ MAP_CSS = """
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
 .legend{position:absolute;bottom:16px;left:16px;z-index:999;background:#fff;padding:12px 14px;
-  border-radius:12px;box-shadow:0 4px 20px rgba(15,23,42,.15);font:12px Inter,system-ui,sans-serif;color:#0f172a}
+border-radius:12px;box-shadow:0 4px 20px rgba(15,23,42,.15);font:12px Inter,system-ui,sans-serif;color:#0f172a}
 .legend b{display:block;margin-bottom:6px;font-weight:600}
 .legend div{display:flex;align-items:center;gap:8px;line-height:20px}
 .legend span{width:10px;height:10px;border-radius:50%}
@@ -32,8 +32,12 @@ def km_text(meters: float) -> str:
     return f"{meters / 1000:.2f}".replace(".", ",") + " km"
 
 
-def resolve_origin(address: str, warnings: list[str]) -> tuple[float, float, str]:
-    """Geocode the address, or fall back to the Universitas Ciputra coordinate."""
+def resolve_origin(address: str, warnings: list[str]) -> tuple[float, float, str] | None:
+    """Geocode the address. None when it does not exist.
+
+    Falls back to the Universitas Ciputra coordinate only when geocoding itself
+    is unavailable (no API key or a failed request).
+    """
     fb = config.FALLBACK_ORIGIN
     if not config.GOOGLE_MAPS_API_KEY:
         warnings.append(f"API key belum diisi: alamat awal memakai koordinat {fb['name']}.")
@@ -44,8 +48,7 @@ def resolve_origin(address: str, warnings: list[str]) -> tuple[float, float, str
         warnings.append(f"Geocoding gagal ({exc.__class__.__name__}): memakai {fb['name']}.")
         return fb["lat"], fb["lon"], fb["name"]
     if found is None:
-        warnings.append(f"Alamat tidak ditemukan: memakai {fb['name']}.")
-        return fb["lat"], fb["lon"], fb["name"]
+        return None
     return found[0], found[1], address
 
 
@@ -135,21 +138,33 @@ def index():
     user, best = None, None
 
     if action == "route":
-        lat, lon, name = resolve_origin(address or config.FALLBACK_ORIGIN["name"], warnings)
+        query = address or config.FALLBACK_ORIGIN["name"]
+        resolved = resolve_origin(query, warnings)
+        if resolved is None:
+            page["notice"] = f"Alamat \"{query}\" tidak ditemukan."
+            return render_template("index.html", map_html=build_map(venues), **page)
+        lat, lon, name = resolved
+        origin = gis.point_from_latlon(lat, lon)
+        away_m = gis.distance_to_boundary(origin, BOUNDARY)
+        if away_m > config.MAX_ORIGIN_DISTANCE_M:
+            # Too far out: no marker and no route, the map stays on CitraLand.
+            page["notice"] = (f"Alamat \"{name}\" berjarak {km_text(away_m)} dari batas CitraLand. "
+                              f"Maksimal {km_text(config.MAX_ORIGIN_DISTANCE_M)}.")
+            return render_template("index.html", map_html=build_map(venues), **page)
         user = {"lat": lat, "lon": lon, "name": name}
-        ranked = gis.rank_by_distance(venues, gis.point_from_latlon(lat, lon))
+        ranked = gis.rank_by_distance(venues, origin)
         if ranked.empty:
             page["notice"] = "Tidak ada tempat yang cocok dengan filter ini."
         else:
             try:
-                ranked, best = gis.route_to_nearest(ranked, gis.point_from_latlon(lat, lon), gis.get_graph(BOUNDARY))
+                ranked, best = gis.route_to_nearest(ranked, origin, gis.get_graph(BOUNDARY))
             except Exception as exc:
                 warnings.append(f"Rute tidak bisa dihitung ({exc.__class__.__name__}). Butuh internet untuk jaringan jalan OSM pertama kali.")
             if best:
                 target = ranked.loc[best["index"]]
                 sport_info = config.SPORTS.get(target["Jenis_Olahraga"], {"label": target["Jenis_Olahraga"], "color": "#888"})
                 page["result"] = {"name": target["Nama"], "sport": sport_info["label"],
-                                  "color": sport_info["color"], "distance": km_text(best["length_m"])}
+                                "color": sport_info["color"], "distance": km_text(best["length_m"])}
             venues = ranked
 
     return render_template("index.html", map_html=build_map(venues, user, best), **page)

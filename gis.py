@@ -56,6 +56,13 @@ def spatial_join(venues: gpd.GeoDataFrame, boundary: gpd.GeoDataFrame) -> gpd.Ge
     return joined.drop(columns="index_right").drop_duplicates(subset=["Tempat_ID", "Jenis_Olahraga"])
 
 
+def distance_to_boundary(user_point: gpd.GeoSeries, boundary: gpd.GeoDataFrame) -> float:
+    """Straight-line distance in meters from the user to the CitraLand edge (0 if inside)."""
+    if boundary.crs.to_string() != config.CRS_UTM or user_point.crs.to_string() != config.CRS_UTM:
+        raise ValueError("distance_to_boundary needs both layers in EPSG:32749")
+    return float(boundary.geometry.union_all().distance(user_point.iloc[0]))
+
+
 def filter_by_sport(venues: gpd.GeoDataFrame, sport: str) -> gpd.GeoDataFrame:
     if not sport or sport == "semua":
         return venues

@@ -15,6 +15,8 @@ import config
 
 PLACES_URL = "https://places.googleapis.com/v1/places:searchText"
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_VIEWBOX = "112.56,-7.20,112.72,-7.36"  # prefer matches around CitraLand
 FIELD_MASK = "places.id,places.displayName,places.location,places.primaryType,places.regularOpeningHours"
 TIMEOUT_S = 15
 
@@ -87,9 +89,36 @@ def fetch_all_venues(api_key: str) -> gpd.GeoDataFrame:
 
 
 def geocode(address: str, api_key: str) -> tuple[float, float] | None:
-    """Return (lat, lon) for an address, or None when Google finds nothing.
+    """Return (lat, lon) for an address, or None when nothing matches.
 
-    Tries the Geocoding API first. If that API is not enabled on the key
+    Google first. When Google itself fails (quota used up, billing off, no
+    network), OpenStreetMap answers instead of the app guessing a location.
+    """
+    try:
+        return geocode_google(address, api_key)
+    except requests.RequestException:
+        lowered = address.lower()
+        for name, coords in config.KNOWN_PLACES.items():
+            if name in lowered:
+                return coords
+        return geocode_nominatim(address)
+
+
+def geocode_nominatim(address: str) -> tuple[float, float] | None:
+    """Free OpenStreetMap geocoder. The viewbox is a preference, not a limit,
+    so a far-away address stays far away and the distance check can reject it."""
+    params = {"q": address, "format": "jsonv2", "limit": 1, "viewbox": NOMINATIM_VIEWBOX}
+    headers = {"User-Agent": "citraland-sport-finder/1.0"}  # required by Nominatim's usage policy
+    resp = requests.get(NOMINATIM_URL, params=params, headers=headers, timeout=TIMEOUT_S)
+    resp.raise_for_status()
+    results = resp.json()
+    if not results:
+        return None
+    return float(results[0]["lat"]), float(results[0]["lon"])
+
+
+def geocode_google(address: str, api_key: str) -> tuple[float, float] | None:
+    """Tries the Geocoding API first. If that API is not enabled on the key
     (REQUEST_DENIED), falls back to Places Text Search, which also resolves
     addresses and place names such as "Universitas Ciputra".
     """
@@ -104,7 +133,14 @@ def geocode(address: str, api_key: str) -> tuple[float, float] | None:
         return None
 
     headers = {"X-Goog-Api-Key": api_key, "X-Goog-FieldMask": "places.location"}
-    body = {"textQuery": f"{address}, Surabaya", "languageCode": "id"}
+    # Bias, not ", Surabaya" in the text: that turned "Singapore" into a school in
+    # Surabaya, so the distance limit measured the wrong place.
+    center = {"latitude": config.MAP_CENTER[0], "longitude": config.MAP_CENTER[1]}
+    body = {
+        "textQuery": address,
+        "languageCode": "id",
+        "locationBias": {"circle": {"center": center, "radius": config.PLACES_BIAS_RADIUS_M}},
+    }
     resp = requests.post(PLACES_URL, json=body, headers=headers, timeout=TIMEOUT_S)
     resp.raise_for_status()
     places = resp.json().get("places", [])
