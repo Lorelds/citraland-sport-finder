@@ -5,3 +5,4 @@ __pycache__/
 .env
 cache/
 data/graph.graphml
+data/graph_surabaya.graphml
